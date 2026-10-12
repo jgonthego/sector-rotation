@@ -1,0 +1,18 @@
+# One-off attempt to turn on GitHub Pages (main branch, root) using the workflow token.
+name: enable-pages
+on:
+  push:
+    paths: [".github/workflows/enable-pages.yml"]
+  workflow_dispatch:
+permissions:
+  pages: write
+  contents: read
+jobs:
+  enable:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/pages" -f "source[branch]=main" -f "source[path]=/" || true
+          gh api "repos/${GITHUB_REPOSITORY}/pages"
