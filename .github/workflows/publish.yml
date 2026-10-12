@@ -1,0 +1,30 @@
+# On every push to main:
+#  1) turn base64 snapshots (*.png.b64, pushed via the GitHub API as text) into real PNGs
+#  2) mirror main -> gh-pages, which is the branch GitHub Pages serves
+#     (https://jgonthego.github.io/sector-rotation/)
+name: publish
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: publish
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Decode PNG snapshots
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for f in $(git ls-files '*.png.b64'); do base64 -d "$f" > "${f%.b64}"; git rm -q "$f"; done
+          git add -A
+          if ! git diff --cached --quiet; then git commit -m "Decode PNG snapshots"; git push origin HEAD:main; fi
+      - name: Mirror main to gh-pages
+        run: git push --force origin HEAD:gh-pages
