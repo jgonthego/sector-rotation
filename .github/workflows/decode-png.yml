@@ -1,0 +1,20 @@
+# Turns base64 snapshots (*.png.b64, pushed via the GitHub API as text) into real PNG files.
+name: decode-png
+on:
+  push:
+    paths: ["**.png.b64"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  decode:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          for f in $(git ls-files '*.png.b64'); do base64 -d "$f" > "${f%.b64}"; git rm -q "$f"; done
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "Decode PNG snapshots"
+          git push
